@@ -19,8 +19,10 @@ Después abrí <http://localhost:8080>.
 
 - 3 a 6 jugadores (se permite 2 para probar). Cada uno elige una ficha de emoción.
 - Todos tiran el dado; el más alto empieza y se sigue en orden.
-- El tablero es la ilustración original (`assets/tablero.png`). Desde INICIO se sale por el arco
-  exterior y, al llegar al bucle central, se queda girando ahí (no se vuelve a pasar por INICIO).
+- El tablero es la ilustración original (`assets/tablero.png`): INICIO más 34 casilleros. Desde INICIO
+  se sale por el arco exterior y, al llegar al bucle central, se queda girando ahí (no se vuelve a
+  pasar por INICIO).
+- Al empezar, todos tiran el dado con una animación; el más alto comienza (desempates incluidos).
 - Tirás el dado, avanzás, y el color del casillero determina la carta:
   Teorías (violeta), Cerebro (azul), Dimensiones (verde), Emociones (amarillo), Desafío Neuro (rojo).
 - Las cartas de opción múltiple, verdadero/falso, mito/realidad y "completar dimensiones"
@@ -70,3 +72,10 @@ El motor ya es un reducer puro y determinista (recibe el `rng`). Para jugar onli
 servidor con WebSockets que guarde el `state` por sala, reciba acciones de cada
 cliente, valide que vengan del jugador en turno (o del "lector" para juzgar
 preguntas abiertas) y reenvíe el nuevo estado a todos.
+
+## Detección de casilleros
+
+Los polígonos de `src/board.js` se obtuvieron segmentando la imagen por color (violeta, azul, verde,
+amarillo, rojo) con NumPy/SciPy: componentes conexas, filtro por área y envolvente convexa. Si se
+cambia la ilustración hay que regenerarlos; `index.html?quick&debug` dibuja los polígonos y su
+número sobre el tablero para verificar.

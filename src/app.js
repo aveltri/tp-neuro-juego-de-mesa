@@ -6,6 +6,7 @@ import { CARDS_BY_ID, CATEGORIES, CATEGORY_ORDER, FILL_OPTIONS, TYPE_LABELS } fr
 import { SQUARES, CHARACTERS, BOARD_IMAGE, BOARD_WIDTH, BOARD_HEIGHT, LOOP_START } from './board.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
+const DEFAULT_NAMES = ['René Favaloro', 'Wundt', 'Freud', 'Darwin', 'William James', 'MacLean'];
 
 const STORAGE_KEY = 'cerebro-en-accion-v1';
 const STEP_MS = 380;
@@ -87,7 +88,7 @@ function render() {
 function defaultSetup() {
   return {
     count: 3,
-    players: CHARACTERS.slice(0, 6).map((c, i) => ({ name: `Jugador ${i + 1}`, character: c.id })),
+    players: CHARACTERS.slice(0, 6).map((c, i) => ({ name: DEFAULT_NAMES[i], character: c.id })),
     repeatedCategory: 'faithful',
     error: null,
   };
@@ -122,9 +123,8 @@ function renderSetup() {
 
   return el('div', { class: 'setup' },
     el('header', {},
+      el('img', { class: 'logo', src: 'assets/logo.png', alt: 'Cerebro en Acción · El juego de las emociones' }),
       el('div', { class: 'subtitle' }, 'Neurociencias · Universidad Favaloro'),
-      el('h1', { class: 'title' }, el('span', { class: 'a' }, 'Cerebro '), el('span', { class: 'b' }, 'en '), el('span', { class: 'a' }, 'Acción')),
-      el('div', { class: 'subtitle' }, 'El juego de las emociones'),
     ),
     el('div', { class: 'card-panel' },
       el('h2', {}, 'Jugadores'),
@@ -185,12 +185,13 @@ function drawSquares() {
   const g = boardSvg.querySelector('#squares');
   g.replaceChildren();
   SQUARES.forEach((sq, i) => {
-    // anillo de resaltado (invisible hasta que el casillero está activo)
-    g.append(svgEl('circle', { class: 'sq', id: `sq-${i}`, cx: sq.x, cy: sq.y, r: 30 }));
+    const points = sq.poly.map(([x, y]) => `${x},${y}`).join(' ');
+    g.append(svgEl('polygon', { class: 'sq', id: `sq-${i}`, points }));
     if (DEBUG) {
       const cat = sq.category ? CATEGORIES[sq.category] : null;
-      g.append(svgEl('circle', { cx: sq.x, cy: sq.y, r: 9, fill: cat ? cat.color : '#000', stroke: '#fff', 'stroke-width': 2 }));
-      g.append(svgEl('text', { x: sq.x, y: sq.y - 14, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 900, fill: '#000', stroke: '#fff', 'stroke-width': 3, 'paint-order': 'stroke' }, i === LOOP_START ? `${i}*` : i));
+      g.append(svgEl('polygon', { points, fill: 'none', stroke: '#fff', 'stroke-width': 3 }));
+      g.append(svgEl('circle', { cx: sq.x, cy: sq.y, r: 6, fill: cat ? cat.color : '#000', stroke: '#fff', 'stroke-width': 2 }));
+      g.append(svgEl('text', { x: sq.x, y: sq.y - 12, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 900, fill: '#000', stroke: '#fff', 'stroke-width': 3, 'paint-order': 'stroke' }, i === LOOP_START ? `${i}*` : i));
     }
   });
 }
@@ -216,6 +217,7 @@ function updateBoard() {
       node = svgEl('g', { id: `piece-${p.id}`, class: 'piece' });
       node.append(svgEl('circle', { r: 19, fill: ch.color }));
       node.append(svgEl('text', {}, ch.emoji));
+      node.append(svgEl('text', { class: 'pname', y: 33 }, p.name));
       g.append(node);
     }
     const group = bySquare[p.pos];
@@ -223,9 +225,9 @@ function updateBoard() {
     const base = squarePositions[p.pos];
     let ox = 0, oy = 0;
     if (group.length > 1) {
-      const a = (k / group.length) * Math.PI * 2;
-      ox = Math.cos(a) * 16;
-      oy = Math.sin(a) * 16;
+      // varias fichas en el mismo casillero: se reparten en fila con el nombre debajo
+      ox = (k - (group.length - 1) / 2) * 30;
+      oy = (k % 2 === 0 ? -1 : 1) * 12;
     }
     node.style.transform = `translate(${base.x + ox}px, ${base.y + oy}px)`;
     node.classList.toggle('current', p.id === state.current && state.phase !== PHASES.END);
@@ -341,6 +343,7 @@ function rollDie() {
 function resetGame() {
   if (!confirm('¿Reiniciar la partida? Se pierde el progreso actual.')) return;
   if (stepTimer) { clearTimeout(stepTimer); stepTimer = null; }
+  if (ui.orderTimer) clearTimeout(ui.orderTimer);
   ui = { rolling: false, dieFace: null, setup: null };
   dispatch({ type: 'RESET' });
 }
@@ -360,33 +363,61 @@ function renderModal() {
   app.append(el('div', { class: 'overlay' }, content));
 }
 
+function orderEntries() {
+  return state.orderRolls.flatMap((rolls, ri) => Object.entries(rolls).map(([id, v]) => ({ ri, id: Number(id), v })));
+}
+
 function modalOrder() {
-  const rounds = state.orderRolls;
-  const tables = rounds.map((rolls, ri) =>
-    el('div', {},
-      rounds.length > 1 && el('div', { class: 'subtitle', style: 'margin-top:8px' }, ri === 0 ? 'Primera tirada' : `Desempate ${ri}`),
-      el('table', { class: 'rolls' },
-        Object.entries(rolls).map(([id, v]) => {
-          const p = state.players[Number(id)];
-          const isWinner = ri === rounds.length - 1 && Number(id) === state.current;
-          return el('tr', { class: isWinner ? 'win' : '' },
-            el('td', {}, `${charOf(p.character).emoji} ${p.name}`),
-            el('td', { class: 'r' }, v),
+  const entries = orderEntries();
+  if (ui.orderReveal === undefined) {
+    // arranca la animación: se revela una tirada por vez
+    ui.orderReveal = 0;
+    const tick = () => {
+      if (state.phase !== PHASES.ORDER) return;
+      ui.orderReveal += 1;
+      renderModal();
+      if (ui.orderReveal < entries.length) ui.orderTimer = setTimeout(tick, 650);
+    };
+    ui.orderTimer = setTimeout(tick, 500);
+  }
+  const revealed = ui.orderReveal;
+  const done = revealed >= entries.length;
+
+  const rounds = state.orderRolls.map((rolls, ri) => {
+    const roundEntries = entries.filter((e) => e.ri === ri);
+    const firstIdx = entries.indexOf(roundEntries[0]);
+    if (revealed < firstIdx) return null; // esta ronda todavía no empezó
+    return el('div', {},
+      state.orderRolls.length > 1 && el('div', { class: 'subtitle', style: 'margin-top:8px' }, ri === 0 ? 'Primera tirada' : `Desempate ${ri}`),
+      el('div', { class: 'order-grid' },
+        roundEntries.map((e) => {
+          const p = state.players[e.id];
+          const idx = entries.indexOf(e);
+          const isRolling = idx === revealed;
+          const shown = idx < revealed;
+          const isWinner = done && ri === state.orderRolls.length - 1 && e.id === state.current;
+          return el('div', { class: `order-row ${isWinner ? 'win' : ''}` },
+            el('div', { class: 'avatar small', style: `background:${charOf(p.character).color}` }, charOf(p.character).emoji),
+            el('div', { class: 'nm' }, p.name),
+            el('div', { class: `die small ${isRolling ? 'rolling' : ''}` }, shown ? e.v : isRolling ? String(1 + Math.floor(Math.random() * 6)) : '·'),
           );
         }),
       ),
-    ),
-  );
+    );
+  });
+
   return el('div', { class: 'modal' },
     el('div', { class: 'head', style: 'background:var(--pink-soft)' },
       el('div', { class: 'cat', style: 'color:var(--red)' }, 'Preparación'),
       el('div', { class: 'kind' }, '¿Quién empieza?'),
     ),
     el('div', { class: 'body' },
-      el('p', {}, 'Todos tiran el dado. El jugador que obtiene el número más alto comienza; luego se continúa en sentido horario.'),
-      tables,
-      el('p', { class: 'centered' }, el('b', {}, `Empieza ${state.players[state.current].name}.`)),
-      el('div', { class: 'actions' }, el('button', { onClick: () => dispatch({ type: 'BEGIN' }) }, '¡A jugar!')),
+      el('p', {}, 'Todos tiran el dado. El número más alto comienza; luego se sigue en sentido horario.'),
+      rounds,
+      done && el('p', { class: 'centered', style: 'margin-top:14px' }, el('b', {}, `Empieza ${state.players[state.current].name}.`)),
+      el('div', { class: 'actions' },
+        el('button', { disabled: !done, onClick: () => { ui.orderReveal = undefined; dispatch({ type: 'BEGIN' }); } }, '¡A jugar!'),
+      ),
     ),
   );
 }
@@ -550,7 +581,7 @@ if (state.phase === PHASES.SETUP && new URLSearchParams(location.search).has('qu
   state = reduce(state, { type: 'START_GAME', players: [
     { name: 'Feli', character: 'alegria' }, { name: 'Ana', character: 'ira' }, { name: 'Ale', character: 'miedo' },
   ] });
-  state = reduce(state, { type: 'BEGIN' });
+  if (new URLSearchParams(location.search).get('quick') !== 'order') state = reduce(state, { type: 'BEGIN' });
   if (new URLSearchParams(location.search).get('quick') === 'card') {
     // avanza hasta caer en un casillero con carta
     do {

@@ -1,5 +1,5 @@
 :root {
-  --bg: #fdf3f1;
+  --bg: #fff1f1;
   --paper: #fff8f6;
   --ink: #2b2220;
   --muted: #7a6663;
@@ -69,7 +69,7 @@ input[type="text"]:focus, select:focus { outline: none; border-color: var(--pink
   padding: 32px 20px 60px;
 }
 .setup header { text-align: center; margin-bottom: 28px; }
-.setup header .title { font-size: clamp(38px, 8vw, 64px); }
+.setup header .logo { width: min(520px, 90%); height: auto; display: block; margin: 0 auto 10px; }
 .card-panel {
   background: var(--paper);
   border-radius: var(--radius);
@@ -255,3 +255,21 @@ table.rolls td { padding: 6px 4px; border-bottom: 1px dashed var(--pink-soft); }
 table.rolls td.r { text-align: right; font-weight: 900; font-size: 18px; }
 table.rolls tr.win td { color: var(--red); }
 .winner-big { font-size: 80px; text-align: center; margin: 6px 0; }
+
+/* fichas: nombre debajo */
+.piece .pname {
+  font-size: 13px; font-weight: 900; fill: #2b2220;
+  stroke: #fff; stroke-width: 3px; paint-order: stroke; stroke-linejoin: round;
+  font-family: "Nunito", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+/* tirada inicial */
+.order-grid { display: grid; gap: 8px; margin: 10px 0; }
+.order-row {
+  display: grid; grid-template-columns: 40px 1fr 48px; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 12px; background: #fff; border: 2px solid transparent;
+}
+.order-row.win { border-color: var(--red); background: var(--pink-soft); }
+.order-row .nm { font-weight: 800; }
+.avatar.small { width: 36px; height: 36px; font-size: 20px; }
+.die.small { width: 44px; height: 44px; font-size: 22px; border-radius: 10px; box-shadow: 0 3px 0 #d8c7c3; }

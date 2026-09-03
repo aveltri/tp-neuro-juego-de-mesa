@@ -298,3 +298,12 @@ table.rolls tr.win td { color: var(--red); }
   100% { transform: translate(0, -30px) scale(1.06) rotateY(180deg); }
 }
 .deal-caption { color: #fff; font-weight: 800; font-size: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); margin: 0; }
+
+/* la pregunta se despliega después de mostrar la categoría */
+.modal.card-enter .head { border-radius: 22px; animation: headOnly 0.01s linear 0.9s both; }
+@keyframes headOnly { to { border-radius: 22px 22px 0 0; } }
+.modal.card-enter .body { overflow: hidden; animation: bodyIn 0.55s ease 0.9s both; }
+@keyframes bodyIn {
+  from { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; transform: translateY(-6px); }
+  to   { max-height: 1200px; opacity: 1; padding-top: 20px; padding-bottom: 22px; transform: translateY(0); }
+}

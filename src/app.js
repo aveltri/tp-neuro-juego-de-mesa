@@ -551,7 +551,7 @@ function modalCard() {
     );
   }
 
-  return el('div', { class: 'modal' },
+  return el('div', { class: 'modal card-enter' },
     el('div', { class: 'head', style: `background:${cat.color};color:${cat.text}` },
       el('div', { class: 'cat' }, cat.label),
       el('div', { class: 'kind' }, TYPE_LABELS[card.type]),

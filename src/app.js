@@ -11,6 +11,7 @@ const DEFAULT_NAMES = ['René Favaloro', 'Wundt', 'Freud', 'Darwin', 'William Ja
 const STORAGE_KEY = 'cerebro-en-accion-v1';
 const STEP_MS = 380;
 const LANDING_PAUSE_MS = 1000;
+const DEAL_MS = 1500;
 
 let state = load() || initialState();
 let ui = { rolling: false, dieFace: null, setup: null };
@@ -354,19 +355,27 @@ function resetGame() {
   if (!confirm('¿Reiniciar la partida? Se pierde el progreso actual.')) return;
   if (stepTimer) { clearTimeout(stepTimer); stepTimer = null; }
   if (ui.orderTimer) clearTimeout(ui.orderTimer);
+  if (ui.dealTimer) clearTimeout(ui.dealTimer);
   ui = { rolling: false, dieFace: null, setup: null };
   dispatch({ type: 'RESET' });
 }
 
 // ---------- modales ----------
 function renderModal() {
+  if (state.phase === PHASES.CARD && ui.dealtCardId !== state.turn.cardId && document.querySelector('.deal')) return;
   document.querySelectorAll('.overlay').forEach((o) => o.remove());
   if (ui.landingPause) return;
   let content = null;
   switch (state.phase) {
     case PHASES.ORDER: content = modalOrder(); break;
     case PHASES.CHOOSE: content = modalChoose(); break;
-    case PHASES.CARD: content = modalCard(); break;
+    case PHASES.CARD:
+      if (ui.dealtCardId !== state.turn.cardId) {
+        content = modalDeal();
+        break;
+      }
+      content = modalCard();
+      break;
     case PHASES.RESULT: content = modalResult(); break;
     case PHASES.END: content = modalEnd(); break;
     default: return;
@@ -452,6 +461,38 @@ function modalChoose() {
         }),
       ),
     ),
+  );
+}
+
+// Animación: la carta sale del mazo y se da vuelta antes de mostrar la pregunta.
+function modalDeal() {
+  const { cardId, category } = state.turn;
+  const cat = CATEGORIES[category];
+  const card = CARDS_BY_ID[cardId];
+  const cur = state.players[state.current];
+  if (!ui.dealTimer) {
+    ui.dealTimer = setTimeout(() => {
+      ui.dealTimer = null;
+      ui.dealtCardId = cardId;
+      renderModal();
+    }, DEAL_MS);
+  }
+  const back = (extra) => el('div', { class: `cardback ${extra}`, style: `--cat:${cat.color}` },
+    el('div', { class: 'cb-label' }, cat.label),
+    el('img', { src: 'assets/logo.png', alt: '' }),
+  );
+  return el('div', { class: 'deal' },
+    el('div', { class: 'deck' },
+      back('b3'), back('b2'),
+      el('div', { class: 'flip' },
+        back('face back'),
+        el('div', { class: 'cardback face front', style: `--cat:${cat.color}` },
+          el('div', { class: 'cb-label' }, cat.label),
+          el('div', { class: 'cb-type' }, TYPE_LABELS[card.type]),
+        ),
+      ),
+    ),
+    el('p', { class: 'deal-caption' }, `${cur.name} saca una carta de ${cat.label}`),
   );
 }
 

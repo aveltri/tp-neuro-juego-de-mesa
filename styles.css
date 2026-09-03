@@ -273,3 +273,28 @@ table.rolls tr.win td { color: var(--red); }
 .order-row .nm { font-weight: 800; }
 .avatar.small { width: 36px; height: 36px; font-size: 20px; }
 .die.small { width: 44px; height: 44px; font-size: 22px; border-radius: 10px; box-shadow: 0 3px 0 #d8c7c3; }
+
+/* ---------- sacar carta del mazo ---------- */
+.deal { display: grid; place-items: center; gap: 22px; perspective: 1200px; }
+.deck { position: relative; width: 220px; height: 300px; }
+.cardback {
+  position: absolute; inset: 0; border-radius: 18px;
+  background: #fff3df; border: 5px solid var(--cat);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 16px; text-align: center;
+}
+.cardback img { width: 82%; height: auto; }
+.cb-label { font-family: "Arial Black", sans-serif; color: var(--cat); font-size: 24px; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1; }
+.cb-type { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 800; color: var(--muted); }
+.cardback.b3 { transform: translate(10px, 10px) rotate(3deg); }
+.cardback.b2 { transform: translate(5px, 5px) rotate(-2deg); }
+.flip { position: absolute; inset: 0; transform-style: preserve-3d; animation: deal 1.25s cubic-bezier(.5,0,.3,1) forwards; }
+.face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.face.front { transform: rotateY(180deg); background: #fff; }
+@keyframes deal {
+  0%   { transform: translate(0, 0) rotateY(0deg); }
+  35%  { transform: translate(0, -80px) scale(1.06) rotateY(0deg); }
+  100% { transform: translate(0, -30px) scale(1.06) rotateY(180deg); }
+}
+.deal-caption { color: #fff; font-weight: 800; font-size: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); margin: 0; }

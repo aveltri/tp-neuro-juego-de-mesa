@@ -10,6 +10,7 @@ const DEFAULT_NAMES = ['René Favaloro', 'Wundt', 'Freud', 'Darwin', 'William Ja
 
 const STORAGE_KEY = 'cerebro-en-accion-v1';
 const STEP_MS = 380;
+const LANDING_PAUSE_MS = 1000;
 
 let state = load() || initialState();
 let ui = { rolling: false, dieFace: null, setup: null };
@@ -237,7 +238,16 @@ function updateBoard() {
 function scheduleStep() {
   stepTimer = setTimeout(() => {
     stepTimer = null;
-    if (state.phase === PHASES.MOVE) dispatch({ type: 'STEP' });
+    if (state.phase !== PHASES.MOVE) return;
+    const lastStep = state.stepsLeft === 1;
+    if (lastStep) ui.landingPause = true; // la carta espera a que se vea dónde cayó la ficha
+    dispatch({ type: 'STEP' });
+    if (lastStep) {
+      setTimeout(() => {
+        ui.landingPause = false;
+        renderModal();
+      }, LANDING_PAUSE_MS);
+    }
   }, STEP_MS);
 }
 
@@ -351,6 +361,7 @@ function resetGame() {
 // ---------- modales ----------
 function renderModal() {
   document.querySelectorAll('.overlay').forEach((o) => o.remove());
+  if (ui.landingPause) return;
   let content = null;
   switch (state.phase) {
     case PHASES.ORDER: content = modalOrder(); break;

@@ -287,16 +287,31 @@ table.rolls tr.win td { color: var(--red); }
 .cardback img { width: 82%; height: auto; }
 .cb-label { font-family: "Arial Black", sans-serif; color: var(--cat); font-size: 24px; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1; }
 .cb-type { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 800; color: var(--muted); }
-.cardback.b3 { transform: translate(10px, 10px) rotate(3deg); }
-.cardback.b2 { transform: translate(5px, 5px) rotate(-2deg); }
-.flip { position: absolute; inset: 0; transform-style: preserve-3d; animation: deal 1.25s cubic-bezier(.5,0,.3,1) forwards; }
+.flip { position: absolute; inset: 0; transform-style: preserve-3d; opacity: 0; --dx: 0px; --dy: 0px; --s: 0.25; }
+.flip.go { opacity: 1; animation: deal 1.6s cubic-bezier(.45,0,.25,1) forwards; }
 .face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .face.front { transform: rotateY(180deg); background: #fff; }
 @keyframes deal {
-  0%   { transform: translate(0, 0) rotateY(0deg); }
-  35%  { transform: translate(0, -80px) scale(1.06) rotateY(0deg); }
-  100% { transform: translate(0, -30px) scale(1.06) rotateY(180deg); }
+  0%   { transform: translate(var(--dx), var(--dy)) scale(var(--s)) rotateY(0deg); }
+  50%  { transform: translate(0, 0) scale(1.04) rotateY(0deg); }
+  100% { transform: translate(0, 0) scale(1.04) rotateY(180deg); }
 }
+
+/* mazos en el panel lateral */
+.decks { display: flex; justify-content: space-between; gap: 6px; }
+.deck-mini { flex: 1; text-align: center; border-radius: 10px; padding: 6px 2px 4px; border: 2px solid transparent; }
+.deck-mini.active { border-color: var(--cat); background: #fff; }
+.dm-stack { position: relative; height: 74px; width: 54px; margin: 0 auto; }
+.dm-card {
+  position: absolute; inset: 0; border-radius: 6px; background: #fff3df;
+  border: 2.5px solid var(--cat); display: grid; place-items: center; padding: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.dm-card.b3 { transform: translate(4px, 4px) rotate(3deg); }
+.dm-card.b2 { transform: translate(2px, 2px) rotate(-2deg); }
+.dm-card img { width: 100%; height: auto; }
+.dm-label { font-size: 9px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cat); margin-top: 5px; }
+.dm-count { font-size: 11px; color: var(--muted); font-weight: 700; }
 .deal-caption { color: #fff; font-weight: 800; font-size: 18px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); margin: 0; }
 
 /* la pregunta se despliega después de mostrar la categoría */

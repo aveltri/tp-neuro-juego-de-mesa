@@ -302,6 +302,26 @@ function updateSide() {
     ),
   );
 
+  const activeDeck = state.phase === PHASES.CARD ? state.turn.category : null;
+  const decks = el('div', { class: 'panel' },
+    el('h3', {}, 'Mazos'),
+    el('div', { class: 'decks' },
+      CATEGORY_ORDER.map((catId) => {
+        const cat = CATEGORIES[catId];
+        const left = (state.decks[catId] || []).length;
+        return el('div', { class: `deck-mini ${activeDeck === catId ? 'active' : ''}`, id: `deck-${catId}`, style: `--cat:${cat.color}`, title: `${cat.label}: ${left} cartas` },
+          el('div', { class: 'dm-stack' },
+            el('div', { class: 'dm-card b3' }),
+            el('div', { class: 'dm-card b2' }),
+            el('div', { class: 'dm-card top' }, el('img', { src: 'assets/logo.png', alt: '' })),
+          ),
+          el('div', { class: 'dm-label' }, cat.short),
+          el('div', { class: 'dm-count' }, `${left}`),
+        );
+      }),
+    ),
+  );
+
   const legend = el('div', { class: 'panel' },
     el('h3', {}, 'Categorías'),
     el('div', { class: 'slots', style: 'gap:6px' },
@@ -320,7 +340,7 @@ function updateSide() {
     ),
   );
 
-  side.replaceChildren(turnPanel, nets, legend, log);
+  side.replaceChildren(turnPanel, nets, decks, legend, log);
 }
 
 function phaseHint() {
@@ -477,23 +497,30 @@ function modalDeal() {
       renderModal();
     }, DEAL_MS);
   }
-  // dorso: solo el logo del juego (sin categoría)
-  const back = (extra) => el('div', { class: `cardback ${extra}`, style: `--cat:${cat.color}` },
-    el('img', { src: 'assets/logo.png', alt: '' }),
-  );
-  return el('div', { class: 'deal' },
-    el('div', { class: 'deck' },
-      back('b3'), back('b2'),
-      el('div', { class: 'flip' },
-        back('face back'),
-        el('div', { class: 'cardback face front', style: `--cat:${cat.color}` },
-          el('div', { class: 'cb-label' }, cat.label),
-          el('div', { class: 'cb-type' }, TYPE_LABELS[card.type]),
-        ),
-      ),
+  const flip = el('div', { class: 'flip' },
+    el('div', { class: 'cardback face back', style: `--cat:${cat.color}` }, el('img', { src: 'assets/logo.png', alt: '' })),
+    el('div', { class: 'cardback face front', style: `--cat:${cat.color}` },
+      el('div', { class: 'cb-label' }, cat.label),
+      el('div', { class: 'cb-type' }, TYPE_LABELS[card.type]),
     ),
+  );
+  const root = el('div', { class: 'deal' },
+    el('div', { class: 'deck' }, flip),
     el('p', { class: 'deal-caption' }, `${cur.name} saca una carta de ${cat.label}`),
   );
+  // Punto de partida: el mazo de esa categoría en el panel lateral.
+  requestAnimationFrame(() => {
+    const from = document.querySelector(`#deck-${category} .dm-card.top`);
+    const to = flip.getBoundingClientRect();
+    if (from && to.width) {
+      const f = from.getBoundingClientRect();
+      flip.style.setProperty('--dx', `${f.left + f.width / 2 - (to.left + to.width / 2)}px`);
+      flip.style.setProperty('--dy', `${f.top + f.height / 2 - (to.top + to.height / 2)}px`);
+      flip.style.setProperty('--s', `${f.width / to.width}`);
+    }
+    flip.classList.add('go');
+  });
+  return root;
 }
 
 function modalCard() {

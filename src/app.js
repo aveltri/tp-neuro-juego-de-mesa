@@ -11,7 +11,7 @@ const DEFAULT_NAMES = ['René Favaloro', 'Wundt', 'Freud', 'Darwin', 'William Ja
 const STORAGE_KEY = 'cerebro-en-accion-v1';
 const STEP_MS = 380;
 const LANDING_PAUSE_MS = 1000;
-const DEAL_MS = 1500;
+const DEAL_MS = 2500; // giro (1.25 s) + carta a la vista antes de la pregunta
 
 let state = load() || initialState();
 let ui = { rolling: false, dieFace: null, setup: null };
@@ -477,8 +477,8 @@ function modalDeal() {
       renderModal();
     }, DEAL_MS);
   }
+  // dorso: solo el logo del juego (sin categoría)
   const back = (extra) => el('div', { class: `cardback ${extra}`, style: `--cat:${cat.color}` },
-    el('div', { class: 'cb-label' }, cat.label),
     el('img', { src: 'assets/logo.png', alt: '' }),
   );
   return el('div', { class: 'deal' },

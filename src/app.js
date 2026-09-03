@@ -316,7 +316,6 @@ function updateSide() {
             el('div', { class: 'dm-card top' }, el('img', { src: 'assets/logo.png', alt: '' })),
           ),
           el('div', { class: 'dm-label' }, cat.short),
-          el('div', { class: 'dm-count' }, `${left}`),
         );
       }),
     ),
